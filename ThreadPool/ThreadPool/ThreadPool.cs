@@ -39,12 +39,18 @@ namespace Veeam.TestTask
         {
             try
             {
+                Console.WriteLine("Start task: {0}", task);
                 task.Execute();
             }
             catch (Exception e)
             {
                 throw new TaskExecuteException(String.Format("Error occurred during task executing. Thread: {0}, Message: {1}", _handler.Name, e.Message));
             }
+        }
+
+        public void Wait()
+        {
+            _handler.Join();
         }
     }
 
@@ -65,11 +71,13 @@ namespace Veeam.TestTask
 
     class PriorityTaskPool : ITaskPool
     {
+        private readonly static ITaskPool instance = new PriorityTaskPool();
+
         private readonly Queue<ITask>[] _tasks; 
         private readonly object _lock = new object();
         private readonly IList<TaskExecutor> _executors = new List<TaskExecutor>(); 
 
-        public PriorityTaskPool(int priorities = 1)
+        private PriorityTaskPool(int priorities = 1)
         {
             if (priorities < 0) throw new ArgumentException("Number of priorities could not be negative");
             _tasks = new Queue<ITask>[priorities];
@@ -77,7 +85,10 @@ namespace Veeam.TestTask
             InitTaskExecutors(Environment.ProcessorCount);
         }
 
-        public static ITaskPool Instance { get; set; }
+        public static ITaskPool Instance
+        {
+            get { return instance; }
+        }
 
         //TODO: add autoresetevent for waiting
         //TODO: implement taskexecutormanager
@@ -134,6 +145,14 @@ namespace Veeam.TestTask
             {
                 _tasks[priority].Enqueue(task);
                 Monitor.Pulse(_lock);
+            }
+        }
+
+        public void Wait()
+        {
+            foreach (var executor in _executors)
+            {
+                executor.Wait();
             }
         }
 

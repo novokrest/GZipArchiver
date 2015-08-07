@@ -1,92 +1,24 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Net.Sockets;
+using System.Reflection.Emit;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
+using Veeam.TestTask;
 
-namespace Veeam.TestTask
+namespace ThreadPool
 {
-    internal class FileChunkInfo
+    interface IFileSplitter
     {
-        private static readonly long InvalidPosition = -1;
-
-        public FileChunkInfo(long id, int length)
-        {
-            Id = id;
-            Length = length;
-            Position = InvalidPosition;
-        }
-
-        public long Id { get; }
-        public int Length { get; }
-        public long Position { get; set; }
-
-        public bool HasValidPosition()
-        {
-            return Position > InvalidPosition;
-        }
-
-        public void SetInvalidPosition()
-        {
-            Position = InvalidPosition;
-        }
-    }
-
-    class FileChunk
-    {
-        public FileChunk(string fileName, FileChunkInfo info, FileDataHolder dataHolder)
-        {
-            DataHolder = dataHolder;
-            FileName = fileName;
-            Info = info;
-        }
-
-        public string FileName { get; }
-        public FileChunkInfo Info { get; }
-        public FileDataHolder DataHolder { get; }
-
-        public byte[] GetData()
-        {
-            return DataHolder.GetData(Info);
-        }
-    }
-
-    class FileDataHolder
-    {
-        private readonly Dictionary<long, byte[]> _chunkDatas = new Dictionary<long, byte[]>();
-
-        public FileDataHolder(string fileName)
-        {
-            FileName = fileName;
-        }
-
-        public string FileName { get; }
-
-        public void AddData(FileChunkInfo chunkInfo, byte[] data)
-        {
-            _chunkDatas.Add(chunkInfo.Id, data);
-        }
-
-        public virtual byte[] GetData(FileChunkInfo chunkInfo)
-        {
-            return _chunkDatas[chunkInfo.Id];
-        }
-
-        public bool HasData(FileChunkInfo chunkInfo)
-        {
-            return _chunkDatas.ContainsKey(chunkInfo.Id);
-        }
+        IEnumerable<FileChunk> GetFileChunks();
     }
 
     class FileSplitter : FileDataHolder
     {
         private FileChunkInfo[] _chunkInfos;
 
-        public FileSplitter(string fileName) 
+        public FileSplitter(string fileName)
             : base(fileName)
         {
             Split(GetMagicChunkLength());
@@ -119,7 +51,7 @@ namespace Veeam.TestTask
 
             for (long position = 0, id = 0; position < fileSize; position += maxChunkLength, id++)
             {
-                _chunkInfos[id] = new FileChunkInfo(id, (int) Math.Min(maxChunkLength, fileSize - position))
+                _chunkInfos[id] = new FileChunkInfo(id, (int)Math.Min(maxChunkLength, fileSize - position))
                 {
                     Position = position
                 };
@@ -134,9 +66,7 @@ namespace Veeam.TestTask
 
         private int GetMagicChunkLength()
         {
-            const int magic = 100*1024*1024;
-
-            return (int) Math.Min(magic, GetFileSize());
+            return 100 * 1024 * 1024;
         }
 
         private long GetFileSize()
@@ -155,100 +85,63 @@ namespace Veeam.TestTask
         }
     }
 
-    class FileAssembler : FileDataHolder
+    class SmartFileSplitter : FileSplitter
     {
-        private readonly Dictionary<long, FileChunkInfo> _chunkInfos = new Dictionary<long, FileChunkInfo>();
-        private readonly Queue<long> _readyChunks = new Queue<long>();
+        private readonly FileChunkInfo[] _chunkInfos;
 
-        private readonly ITaskPool _taskPool;
-
-        public FileAssembler(string fileName)
-            : this(fileName, PriorityTaskPool.Instance)
-        {
-        }
-
-        public FileAssembler(string fileName, ITaskPool taskPool)
+        public SmartFileSplitter(string fileName) 
             : base(fileName)
         {
-            _taskPool = taskPool;
+            _chunkInfos = new FileChunkInfo[GetChunkCount()];
         }
 
-        public void AddFileChunk(FileChunkInfo fileChunkInfo, byte[] data)
+        public class Header
         {
-            AddData(fileChunkInfo, data);
-            _chunkInfos.Add(fileChunkInfo.Id, fileChunkInfo);
-            if (TryComputePosition(fileChunkInfo))
+            public Header(long chunkCount, int[] chunkLengths)
             {
-                UpdateChunkPositions(fileChunkInfo);
-                _taskPool.AddTask(CreateFileAssembleTask(fileChunkInfo));
+                ChunkCount = chunkCount;
+                ChunkLengths = chunkLengths;
             }
-        }
 
-        private void UpdateChunkPositions(FileChunkInfo fileChunkInfo)
-        {
-            var currentChunkId = fileChunkInfo.Id;
-            var nextChunkId = currentChunkId + 1;
-            while (_chunkInfos.ContainsKey(nextChunkId))
-            {
-                var currentChunkInfo = _chunkInfos[currentChunkId];
-                var nextChunkInfo = _chunkInfos[nextChunkId];
-                if (nextChunkInfo.HasValidPosition()) break;
-                nextChunkInfo.Position = currentChunkInfo.Position + currentChunkInfo.Length;
-                _taskPool.AddTask(CreateFileAssembleTask(nextChunkInfo));
-                currentChunkId = nextChunkId;
-                nextChunkId = currentChunkId + 1;
-            }
-        }
+            public long ChunkCount { get; }
+            public int[] ChunkLengths { get; }
 
-        private FileAssembleTask CreateFileAssembleTask(FileChunkInfo fileChunkInfo)
-        {
-            var fileChunk = new FileChunk(FileName, fileChunkInfo, this);
-            return new FileAssembleTask(fileChunk);
-        }
-
-        private bool TryComputePosition(FileChunkInfo fileChunkInfo)
-        {
-            var chunkId = fileChunkInfo.Id;
-            if (chunkId == 0)
+            public static Header Read(Stream stream)
             {
-                fileChunkInfo.Position = 0;
-                return true;
-            }
-            var prevChunkId = chunkId - 1;
-            if (_chunkInfos.ContainsKey(prevChunkId))
-            {
-                var prevChunkInfo = _chunkInfos[prevChunkId];
-                if (prevChunkInfo.HasValidPosition())
+                var reader = new BinaryReader(stream);
+                var count = reader.ReadInt32();
+                var lengths = new int[count];
+                for (var i = 0; i < count; ++i)
                 {
-                    fileChunkInfo.Position = prevChunkInfo.Position + prevChunkInfo.Length;
-                    return true;
+                    lengths[i] = reader.ReadInt32();
+                }
+                return new Header(count, lengths);
+            }
+
+            public static void Write(Header header, Stream stream)
+            {
+                var writer = new BinaryWriter(stream);
+                writer.Write(header.ChunkCount);
+                for (int i = 0; i < header.ChunkCount; i++)
+                {
+                    writer.Write(header.ChunkLengths[i]);
                 }
             }
-            fileChunkInfo.SetInvalidPosition();
-            return false;
-        }
-    }
-
-    class FileAssembleTask : ITask
-    {
-        private readonly FileChunk _fileChunk;
-
-        public FileAssembleTask(FileChunk fileChunk)
-        {
-            _fileChunk = fileChunk;
         }
 
-        public void Execute()
+        private Header ReadHeader()
         {
-            var fileName = _fileChunk.FileName;
-            var chunkInfo = _fileChunk.Info;
-            var data = _fileChunk.GetData();
-
-            using (var fileStream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write))
+            using (var fileStream = new FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
-                fileStream.Write(data, 0, chunkInfo.Length);
+                var headerReader = new BinaryReader(fileStream);
+                var chunkCount = headerReader.ReadInt32();
             }
         }
+
+        private int GetChunkCount()
+        {
+
+        }
     }
+
 }

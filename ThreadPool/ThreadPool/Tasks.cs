@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using ThreadPool;
 
 namespace Veeam.TestTask
@@ -18,7 +19,7 @@ namespace Veeam.TestTask
 
     internal class ConvertFileChunkTask : ITask
     {
-        public ConvertFileChunkTask(MemoryDataConverter converter, FileChunk originalFileChunk, FileAssembler archiveAssembler)
+        public ConvertFileChunkTask(IMemoryDataConverter converter, FileChunk originalFileChunk, FileAssembler archiveAssembler)
         {
             Converter = converter;
             OriginalFileChunk = originalFileChunk;
@@ -27,7 +28,7 @@ namespace Veeam.TestTask
 
         public FileChunk OriginalFileChunk { get; }
         public FileAssembler ArchiveAssembler { get; }
-        public MemoryDataConverter Converter { get; }
+        public IMemoryDataConverter Converter { get; }
 
         public void Execute()
         {
@@ -38,6 +39,33 @@ namespace Veeam.TestTask
             var convertedChunkInfo = new FileChunkInfo(originalChunkInfo.Id, convertedDataInfo.Length);
 
             ArchiveAssembler.AddFileChunk(convertedChunkInfo, convertedDataInfo.Data);
+        }
+
+        public override string ToString()
+        {
+            return String.Format("ConvertFileChunkTask: Converter={0}, FileChunk={1}", Converter, OriginalFileChunk);
+        }
+    }
+
+    internal class VerboseTaskDecorator : ITask
+    {
+        private readonly ITask _task;
+
+        public VerboseTaskDecorator(ITask task)
+        {
+            _task = task;
+        }
+
+        public void Execute()
+        {
+            Console.WriteLine($"Task on thread {Thread.CurrentThread.ManagedThreadId} is started");
+            _task.Execute();
+            Console.WriteLine($"Task on thread {Thread.CurrentThread.ManagedThreadId} has been executed");
+        }
+
+        public override string ToString()
+        {
+            return _task.ToString();
         }
     }
 
@@ -50,7 +78,7 @@ namespace Veeam.TestTask
     {
         public override ITask CreateTask(FileChunk fileChunk, FileAssembler fileAssembler)
         {
-            return new ConvertFileChunkTask(new GZipCompressMemoryDataConverter(), fileChunk, fileAssembler);
+            return new VerboseTaskDecorator(new ConvertFileChunkTask(new GZipCompressMemoryDataConverter(), fileChunk, fileAssembler));
         }
     }
 
@@ -58,7 +86,7 @@ namespace Veeam.TestTask
     {
         public override ITask CreateTask(FileChunk fileChunk, FileAssembler fileAssembler)
         {
-            return new ConvertFileChunkTask(new GZipDecompressMemoryDataConverter(), fileChunk, fileAssembler);
+            return new VerboseTaskDecorator(new ConvertFileChunkTask(new GZipDecompressMemoryDataConverter(), fileChunk, fileAssembler));
         }
     }
 }

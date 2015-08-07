@@ -62,7 +62,7 @@ namespace Veeam.TestTask
 
         public void Convert(string originalFilePath, string convertedFilePath)
         {
-            var threadPool = new PriorityTaskPool(2);
+            var threadPool = PriorityTaskPool.Instance;
             var fileSplitter = new FileSplitter(originalFilePath);
             var fileAssembler = new FileAssembler(convertedFilePath);
             foreach (var fileChunk in fileSplitter.GetFileChunks())
