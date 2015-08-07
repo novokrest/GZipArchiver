@@ -14,14 +14,30 @@ namespace ThreadPool
         IEnumerable<FileChunk> GetFileChunks();
     }
 
-    class FileSplitter : FileDataHolder
+    internal abstract class FileSplitter : FileDataHolder
     {
-        private FileChunkInfo[] _chunkInfos;
+        private readonly FileChunkInfo[] _chunkInfos;
 
-        public FileSplitter(string fileName)
+        protected class SplitInfo
+        {
+            public SplitInfo(long chunkCount, int[] chunkLengths)
+            {
+                ChunkCount = chunkCount;
+                ChunkLengths = chunkLengths;
+            }
+
+            public long ChunkCount { get; }
+            public int[] ChunkLengths { get; }
+        }
+
+        protected abstract SplitInfo Split();
+
+        protected FileSplitter(string fileName)
             : base(fileName)
         {
-            Split(GetMagicChunkLength());
+            var splitInfo = Split();
+
+            _chunkInfos = Split();
         }
 
         public override byte[] GetData(FileChunkInfo chunkInfo)
@@ -44,19 +60,22 @@ namespace ThreadPool
             AddData(chunkInfo, data);
         }
 
-        private void Split(long maxChunkLength)
-        {
-            var fileSize = GetFileSize();
-            _chunkInfos = new FileChunkInfo[fileSize / maxChunkLength + 1];
+        //private FileChunkInfo[] Split()
+        //{
+        //    var chunkSize = GetMagicChunkLength();
+        //    var chunkCount = GetFileSize()/chunkSize + 1;
+        //    var chunkInfos = new FileChunkInfo[chunkCount];
 
-            for (long position = 0, id = 0; position < fileSize; position += maxChunkLength, id++)
-            {
-                _chunkInfos[id] = new FileChunkInfo(id, (int)Math.Min(maxChunkLength, fileSize - position))
-                {
-                    Position = position
-                };
-            }
-        }
+        //    for (long id = 0, position = 0; id < chunkCount; id++)
+        //    {
+        //        chunkInfos[id] = new FileChunkInfo(id, (int) Math.Min(maxChunkLength, fileSize - position))
+        //        {
+        //            Position = position
+        //        };
+        //        position += chunkInfos[id];
+        //    }
+        //    return chunkInfos;
+        //}
 
         public IEnumerable<FileChunk> GetFileChunks()
         {
@@ -92,7 +111,25 @@ namespace ThreadPool
         public SmartFileSplitter(string fileName) 
             : base(fileName)
         {
-            _chunkInfos = new FileChunkInfo[GetChunkCount()];
+            _chunkInfos = Split();
+        }
+
+        private FileChunkInfo[] Split()
+        {
+            using (var fileStream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
+            {
+                var header = Header.Read(fileStream);
+                var chunkInfos = new FileChunkInfo[header.ChunkCount];
+                for (long id = 0, position = 0; id < header.ChunkCount; ++id)
+                {
+                    chunkInfos[id] = new FileChunkInfo(id, header.ChunkLengths[id])
+                    {
+                        Position = position
+                    };
+                    position += chunkInfos[id].Length;
+                }
+                return chunkInfos;
+            }
         }
 
         public class Header
