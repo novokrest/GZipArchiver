@@ -1,14 +1,6 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Net.Sockets;
-using System.Runtime.Remoting.Messaging;
-using System.Text;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.Common
 {
     internal class FileChunkInfo
     {
@@ -48,7 +40,7 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
 
         public override string ToString()
         {
-            return String.Format("Id: {0}, Length: {1}, Position: {2}", Id, Length, Position);
+            return String.Format("ChunkInfo[ Id: {0}, Length: {1}, Position: {2} ]", Id, Length, Position);
         }
     }
 
@@ -85,9 +77,19 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
             return DataHolder.GetData(Info);
         }
 
+        public void SetData(byte[] data)
+        {
+            DataHolder.SetData(Info, data);
+        }
+
+        public void ReleaseData()
+        {
+            DataHolder.ReleaseData(Info);
+        }
+
         public override string ToString()
         {
-            return String.Format("FileName[{0}], Info[{1}]", FileName, Info);
+            return String.Format("FileChunk[ Filename: {0}, {1} ]", FileName, Info);
         }
     }
 

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Veeam.IntroductoryAssignment.FileContentManagers;
-using Veeam.IntroductoryAssignment.Util;
+﻿using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileAssembling;
+using Veeam.IntroductoryAssignment.Tasks.Decorators;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
@@ -16,7 +13,7 @@ namespace Veeam.IntroductoryAssignment.Tasks
     {
         public override ITask CreateTask(FileChunk fileChunk, FileAssembler fileAssembler)
         {
-            return new VerboseTaskDecorator(new ConvertFileChunkTask(new GZipCompressMemoryDataConverter(), fileChunk, fileAssembler));
+            return new VerboseTask(new ConvertFileChunkTask(new GZipCompressMemoryDataConverter(), fileChunk, fileAssembler));
         }
     }
 
@@ -24,7 +21,7 @@ namespace Veeam.IntroductoryAssignment.Tasks
     {
         public override ITask CreateTask(FileChunk fileChunk, FileAssembler fileAssembler)
         {
-            return new VerboseTaskDecorator(new ConvertFileChunkTask(new GZipDecompressMemoryDataConverter(), fileChunk, fileAssembler));
+            return new VerboseTask(new ConvertFileChunkTask(new GZipDecompressMemoryDataConverter(), fileChunk, fileAssembler));
         }
     }
 }

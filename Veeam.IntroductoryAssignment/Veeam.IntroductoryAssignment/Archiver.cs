@@ -1,5 +1,8 @@
 ﻿using System;
-using Veeam.IntroductoryAssignment.FileContentManagers;
+using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileAssembling;
+using Veeam.IntroductoryAssignment.FileConverting;
+using Veeam.IntroductoryAssignment.FileSplitting;
 using Veeam.IntroductoryAssignment.Tasks;
 using Veeam.IntroductoryAssignment.ThreadPool;
 
@@ -27,13 +30,16 @@ namespace Veeam.IntroductoryAssignment
             var taskPool = PriorityTaskPool.Instance;
             var fileSplitter = new RegularFileSplitter(originalFilePath);
             var fileAssembler = new ArchiveFileAssembler(archivePath, fileSplitter.GetChunkCount());
+            var fileConverter = new FileConverter(new GZipCompressMemoryDataConverter(), fileAssembler, taskPool);
             foreach (var fileChunk in fileSplitter.GetFileChunks())
             {
-                taskPool.AddTask(_compressTaskFactory.CreateTask(fileChunk, fileAssembler));
+                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter));
             }
             taskPool.Start();
+
             fileAssembler.WaitForComplete();
             Console.WriteLine("Assembling complete");
+
             taskPool.Stop();
         }
 
@@ -42,9 +48,10 @@ namespace Veeam.IntroductoryAssignment
             var taskPool = PriorityTaskPool.Instance;
             var fileSplitter = new ArchiveFileSplitter(archivePath);
             var fileAssembler = new RegularFileAssembler(unpackedFilePath, fileSplitter.GetChunkCount());
+            var fileConverter = new FileConverter(new GZipDecompressMemoryDataConverter(), fileAssembler, taskPool);
             foreach (var fileChunk in fileSplitter.GetFileChunks())
             {
-                taskPool.AddTask(_decompressTaskFactory.CreateTask(fileChunk, fileAssembler));
+                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter));
             }
             taskPool.Start();
 

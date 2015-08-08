@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.Tasks;
 
 namespace Veeam.IntroductoryAssignment.ThreadPool
 {
@@ -13,7 +9,6 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         private enum State
         {
             Runned,
-            Waited,
             Stopped,
             Aborted
         }
@@ -63,6 +58,8 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             }
             catch (Exception e)
             {
+                Console.WriteLine("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
+                        this, e.Message);
                 throw new TaskExecuteException(
                     String.Format("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
                         this, e.Message), e);

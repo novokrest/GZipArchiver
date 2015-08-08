@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
+using Veeam.IntroductoryAssignment.Common;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.FileSplitting
 {
     internal class FileSplitInfo
     {

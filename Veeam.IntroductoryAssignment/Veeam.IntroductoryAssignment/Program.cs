@@ -14,23 +14,21 @@ namespace Veeam.IntroductoryAssignment
         static int Main(string[] args)
         {
 #if DEBUG
-            var testFileName = "batman.mkv";
-            var archiveFileName = testFileName + ".gz";
-            var unpackedFileName = "unpacked_" + testFileName;
-            args = new[] { "compress", testFileName, archiveFileName };
-            args = new[] { "decompress", archiveFileName, unpackedFileName };
+            var testFileName = "small.pdf";
+            args = new[] {"compress", testFileName, testFileName + ".gz"};
+            args = new[] { "decompress", testFileName + ".gz", "unpacked_" + testFileName };
 #endif //DEBUG
             try
             {
-                ProgramArguments arguments = ProgramArguments.Parse(args);
-                IArchiver archiver = GZipArchiver.Instance;
+                var arguments = ProgramArguments.Parse(args);
+                var archiver = GZipArchiver.Instance;
                 if (arguments.Mode == ProgramMode.Compress)
                 {
-                    archiver.Compress(arguments.FilePath, arguments.ArchivePath);
+                    archiver.Compress(arguments.OriginalFileName, arguments.ConvertedFileName);
                 }
                 else
                 {
-                    archiver.Decompress(arguments.ArchivePath, arguments.FilePath);
+                    archiver.Decompress(arguments.OriginalFileName, arguments.ConvertedFileName);
                 }
             }
             catch (IncorrectProgramArgumentsException e)
@@ -43,8 +41,9 @@ namespace Veeam.IntroductoryAssignment
                     Process.GetCurrentProcess().ProcessName);
                 return 1;
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Console.WriteLine("Error occurred: {0}", e.Message);
                 return 1;
             }
 
@@ -57,14 +56,14 @@ namespace Veeam.IntroductoryAssignment
     class ProgramArguments
     {
         private readonly ProgramMode _mode;
-        private readonly string _filePath;
-        private readonly string _archivePath;
+        private readonly string _originalFileName;
+        private readonly string _convertedFileName;
 
-        private ProgramArguments(ProgramMode mode, string filePath, string archivePath)
+        private ProgramArguments(ProgramMode mode, string originalFileName, string convertedFileName)
         {
             _mode = mode;
-            _filePath = filePath;
-            _archivePath = archivePath;
+            _originalFileName = originalFileName;
+            _convertedFileName = convertedFileName;
         }
 
         public ProgramMode Mode
@@ -72,21 +71,33 @@ namespace Veeam.IntroductoryAssignment
             get { return _mode; }
         }
 
-        public string FilePath
+        public string OriginalFileName
         {
-            get { return _filePath; }
+            get { return _originalFileName; }
         }
 
-        public string ArchivePath
+        public string ConvertedFileName
         {
-            get { return _archivePath; }
+            get { return _convertedFileName; }
         }
 
         public static ProgramArguments Parse(string[] args)
         {
-            if (args.Length < 3) throw new IncorrectProgramArgumentsException("Few arguments!");
+            if (args.Length < 3)
+            {
+                throw new IncorrectProgramArgumentsException("Few arguments!");
+            }
+            
+            var originalFileName = args[1];
+            var convertedFileName = args[2];
+            if (String.Equals(originalFileName, convertedFileName, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new IncorrectProgramArgumentsException("Original and converted filenames are the same!");
+            }
+
             var mode = ParseMode(args[0]);
-            return mode == ProgramMode.Compress ? new ProgramArguments(mode, args[1], args[2]) : new ProgramArguments(mode, args[2], args[1]);
+
+            return new ProgramArguments(mode, originalFileName, convertedFileName);
         }
 
         private static ProgramMode ParseMode(string arg)

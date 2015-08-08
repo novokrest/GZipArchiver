@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.Common
 {
     class FileDataHolder
     {
@@ -20,14 +17,20 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
             get { return _fileName; }
         }
 
-        public void AddData(FileChunkInfo chunkInfo, byte[] data)
+        public void SetData(FileChunkInfo chunkInfo, byte[] data)
         {
             _chunkDatas.Add(chunkInfo.Id, data);
         }
 
         public virtual byte[] GetData(FileChunkInfo chunkInfo)
         {
-            return _chunkDatas[chunkInfo.Id];
+            var chunkId = chunkInfo.Id;
+            if (!_chunkDatas.ContainsKey(chunkId))
+            {
+                var data = new byte[chunkInfo.Length];
+                _chunkDatas.Add(chunkId, data);    
+            }
+            return _chunkDatas[chunkInfo.Id];    
         }
 
         public bool HasData(FileChunkInfo chunkInfo)
@@ -35,9 +38,9 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
             return _chunkDatas.ContainsKey(chunkInfo.Id);
         }
 
-        public void ReleaseData(long id)
+        public void ReleaseData(FileChunkInfo chunkInfo)
         {
-            _chunkDatas[id] = null;
+            _chunkDatas[chunkInfo.Id] = null;
         }
     }
 }

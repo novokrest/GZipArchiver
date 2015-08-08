@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
-using Veeam.IntroductoryAssignment.Tasks;
+using Veeam.IntroductoryAssignment.Common;
 using Veeam.IntroductoryAssignment.Util;
 
 namespace Veeam.IntroductoryAssignment.ThreadPool
@@ -27,7 +25,7 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
 
     class PriorityTaskPool : ITaskPool
     {
-        private readonly static ITaskPool instance = new PriorityTaskPool();
+        private readonly static ITaskPool instance = new PriorityTaskPool(1);
 
         private readonly PriorityQueue<ITask> _tasks = new PriorityQueue<ITask>();
         private readonly object _lock = new object();

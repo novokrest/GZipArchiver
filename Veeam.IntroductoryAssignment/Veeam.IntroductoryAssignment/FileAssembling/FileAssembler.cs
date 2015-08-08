@@ -1,19 +1,20 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Net.Sockets;
-using System.Threading;
+using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileSplitting;
 using Veeam.IntroductoryAssignment.Tasks;
 using Veeam.IntroductoryAssignment.ThreadPool;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.FileAssembling
 {
-    abstract class FileAssembler
+    abstract class FileAssembler : BaseCompletionWaitable, ITaskCompletionObserver
     {
         private readonly string _fileName;
         private readonly FileSplitInfo _fileSplitInfo;
         private readonly FileDataHolder _fileDataHolder;
         private readonly ITaskPool _taskPool;
-        private readonly HashSet<long> _assembledChunks = new HashSet<long>();
+
+        private readonly HashSet<long> _assemblingChunks = new HashSet<long>();
+        private int _assembledChunkCount;
 
         protected FileAssembler(string fileName, long chunkCount)
         {
@@ -35,7 +36,7 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
 
         public void AddFileChunk(FileChunkInfo fileChunkInfo, byte[] data)
         {
-            _fileDataHolder.AddData(fileChunkInfo, data);
+            _fileDataHolder.SetData(fileChunkInfo, data);
 
             var chunkId = fileChunkInfo.Id;
             SplitInfo.Chunks[chunkId] = fileChunkInfo;
@@ -54,12 +55,13 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
 
         private bool CanAssembleChunk(FileChunkInfo chunkInfo)
         {
-            return chunkInfo != null && TryComputePosition(chunkInfo) && !_assembledChunks.Contains(chunkInfo.Id);
+            return chunkInfo != null && TryComputePosition(chunkInfo) && !_assemblingChunks.Contains(chunkInfo.Id);
         }
 
         private void AssembleChunk(FileChunkInfo chunkInfo)
         {
-            _taskPool.AddTask(CreateFileAssembleTask(chunkInfo), 1);
+            _assemblingChunks.Add(chunkInfo.Id);
+            _taskPool.AddTask(CreateFileAssembleTask(chunkInfo), 2);
         }
 
         private FileAssembleTask CreateFileAssembleTask(FileChunkInfo fileChunkInfo)
@@ -91,71 +93,16 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
             return false;
         }
 
-        private readonly Dictionary<Thread, AutoResetEvent> _waiters = new Dictionary<Thread, AutoResetEvent>();
-
-        public void WaitForComplete()
+        public void NotifyAboutTaskCompletion(FileChunk chunk)
         {
-            var thread = Thread.CurrentThread;
-            var waitHandler = new AutoResetEvent(false);
-            _waiters.Add(thread, waitHandler);
-            waitHandler.WaitOne();;
+            ++_assembledChunkCount;
+            if (_assembledChunkCount == SplitInfo.ChunkCount)
+            {
+                CompleteAssembling();
+                NotifyWaiters();
+            }
         }
 
         protected abstract void CompleteAssembling();
-
-        public void NotifyAboutAssemblingCompletion()
-        {
-            foreach (var waitHandler in _waiters.Values)
-            {
-                waitHandler.Set();
-            }
-        }
-
-        public void NotifyAboutTaskCompletion(FileChunk fileChunk)
-        {
-            _fileDataHolder.ReleaseData(fileChunk.Info.Id);
-            AddAssembledChunk(fileChunk.Info);
-        }
-
-        private void AddAssembledChunk(FileChunkInfo info)
-        {
-            _assembledChunks.Add(info.Id);
-            if (_assembledChunks.Count == SplitInfo.ChunkCount)
-            {
-                CompleteAssembling();
-                NotifyAboutAssemblingCompletion();
-            }
-        }
     }
-
-    class ArchiveFileAssembler : FileAssembler
-    {
-        public ArchiveFileAssembler(string fileName, long chunkCount) 
-            : base(fileName, chunkCount)
-        {
-        }
-
-        protected override void CompleteAssembling()
-        {
-            using (var fileStream = new FileStream(FileName, FileMode.Append, FileAccess.Write))
-            {
-                var headerWriter = new ArchiveHeaderWriter(fileStream);
-                headerWriter.WriteHeader(ArchiveHeader.Create(SplitInfo));
-            }
-        }
-    }
-
-    class RegularFileAssembler : FileAssembler
-    {
-        public RegularFileAssembler(string fileName, long chunkCount) 
-            : base(fileName, chunkCount)
-        {
-        }
-
-        protected override void CompleteAssembling()
-        {
-         
-        }
-    }
-
 }

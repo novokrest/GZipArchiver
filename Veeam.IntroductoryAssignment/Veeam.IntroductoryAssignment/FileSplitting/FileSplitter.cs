@@ -1,43 +1,24 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Sockets;
+using Veeam.IntroductoryAssignment.Common;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.FileSplitting
 {
     interface IFileSplitter
     {
         IEnumerable<FileChunk> GetFileChunks();
     }
 
-    internal abstract class FileSplitter : FileDataHolder
+    internal abstract class FileSplitter
     {
+        private readonly string _fileName;
         private readonly FileSplitInfo _fileSplitInfo;
+        private readonly FileDataHolder _fileDataHolder;
 
         protected FileSplitter(string fileName, IFileSplitInfoExtractor splitInfoExtractor)
-            : base(fileName)
         {
+            _fileName = fileName;
             _fileSplitInfo = splitInfoExtractor.GetFileSplitInfo();
-        }
-
-        public override byte[] GetData(FileChunkInfo chunkInfo)
-        {
-            if (!HasData(chunkInfo))
-            {
-                ReadData(chunkInfo);
-            }
-            return base.GetData(chunkInfo);
-        }
-
-        private void ReadData(FileChunkInfo chunkInfo)
-        {
-            var data = new byte[chunkInfo.Length];
-            using (var fileStream = new FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
-            {
-                fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
-                fileStream.ReadAll(data, 0, data.Length);
-            }
-            AddData(chunkInfo, data);
+            _fileDataHolder = new FileDataHolder(fileName);
         }
 
         public IEnumerable<FileChunk> GetFileChunks()
@@ -51,7 +32,7 @@ namespace Veeam.IntroductoryAssignment.FileContentManagers
 
         private FileChunk GetFileChunk(FileChunkInfo chunkInfo)
         {
-            return new FileChunk(FileName, chunkInfo, this);
+            return new FileChunk(_fileName, chunkInfo, _fileDataHolder);
         }
 
         public long GetChunkCount()

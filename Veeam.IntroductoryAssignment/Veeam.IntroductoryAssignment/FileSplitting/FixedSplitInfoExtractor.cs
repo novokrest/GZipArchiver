@@ -1,13 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Veeam.IntroductoryAssignment.Common;
 
-namespace Veeam.IntroductoryAssignment.FileContentManagers
+namespace Veeam.IntroductoryAssignment.FileSplitting
 {
     internal class FixedSplitInfoExtractor : BaseFileSplitInfoExtractor
     {
-        private static readonly int DefaultMaxChunkLength = 100*1024*1024;
+        private static readonly int DefaultMaxChunkLength = 100*1024;//*1024;
 
         private readonly int _maxChunkLength;
 

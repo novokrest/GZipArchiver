@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 
-namespace Veeam.IntroductoryAssignment.Util
+namespace Veeam.IntroductoryAssignment.Common
 {
     internal class DataInfo
     {
@@ -33,12 +33,6 @@ namespace Veeam.IntroductoryAssignment.Util
     interface IMemoryDataConverter
     {
         DataInfo Convert(DataInfo dataInfo);
-    }
-
-    internal abstract class MemoryDataConverter : IMemoryDataConverter
-    {
-        public abstract DataInfo Convert(DataInfo dataInfo);
-        protected abstract Stream GetConvertingStream(MemoryStream stream);
     }
 
     internal class GZipCompressMemoryDataConverter : IMemoryDataConverter

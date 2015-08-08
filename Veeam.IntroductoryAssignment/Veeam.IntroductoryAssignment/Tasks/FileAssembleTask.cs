@@ -1,24 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Veeam.IntroductoryAssignment.FileContentManagers;
+﻿using System.IO;
+using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileAssembling;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
-    class FileAssembleTask : ITask
+    class FileAssembleTask : ObservableTask
     {
         private readonly FileChunk _fileChunk;
-        private readonly FileAssembler _fileChunkOwner;
 
-        public FileAssembleTask(FileChunk fileChunk, FileAssembler fileChunkOwner)
+        public FileAssembleTask(FileChunk fileChunk, FileAssembler fileAssembler)
+            : base(fileAssembler)
         {
             _fileChunk = fileChunk;
-            _fileChunkOwner = fileChunkOwner;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             var fileName = _fileChunk.FileName;
             var chunkInfo = _fileChunk.Info;
@@ -30,7 +26,8 @@ namespace Veeam.IntroductoryAssignment.Tasks
                 fileStream.Write(data, 0, chunkInfo.Length);
             }
 
-            _fileChunkOwner.NotifyAboutTaskCompletion(_fileChunk);
+            _fileChunk.ReleaseData();
+            Observer.NotifyAboutTaskCompletion(_fileChunk);
         }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Veeam.IntroductoryAssignment
+namespace Veeam.IntroductoryAssignment.Util
 {
     interface IConcurrentQueue<T>
     {
