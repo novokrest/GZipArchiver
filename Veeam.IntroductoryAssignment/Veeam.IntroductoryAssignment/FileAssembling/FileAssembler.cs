@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using Veeam.IntroductoryAssignment.Common;
 using Veeam.IntroductoryAssignment.FileSplitting;
 using Veeam.IntroductoryAssignment.Tasks;
@@ -18,6 +19,7 @@ namespace Veeam.IntroductoryAssignment.FileAssembling
 
         protected FileAssembler(string fileName, long chunkCount)
         {
+            File.Create(fileName);
             _fileName = fileName;
             _fileSplitInfo = new FileSplitInfo(chunkCount);
             _fileDataHolder = new FileDataHolder(fileName);
@@ -79,16 +81,13 @@ namespace Veeam.IntroductoryAssignment.FileAssembling
                 return true;
             }
             var prevChunkId = chunkId - 1;
-            var chunks = SplitInfo.Chunks;
-            if (chunks != null)
+            var prevChunkInfo = SplitInfo.Chunks[prevChunkId];
+            if (prevChunkInfo != null && prevChunkInfo.HasValidPosition())
             {
-                var prevChunkInfo = chunks[prevChunkId];
-                if (prevChunkInfo.HasValidPosition())
-                {
-                    fileChunkInfo.Position = prevChunkInfo.Position + prevChunkInfo.Length;
-                    return true;
-                }
+                fileChunkInfo.Position = prevChunkInfo.Position + prevChunkInfo.Length;
+                return true;
             }
+
             fileChunkInfo.SetInvalidPosition();
             return false;
         }

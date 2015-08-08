@@ -23,9 +23,9 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         void AddTask(ITask task);
     }
 
-    class PriorityTaskPool : ITaskPool
+    class PriorityTaskPool : ConsoleLoggable, ITaskPool
     {
-        private readonly static ITaskPool instance = new PriorityTaskPool(1);
+        private readonly static ITaskPool instance = new PriorityTaskPool();
 
         private readonly PriorityQueue<ITask> _tasks = new PriorityQueue<ITask>();
         private readonly object _lock = new object();
@@ -91,8 +91,9 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         {
             lock (_lock)
             {
+                Log("New task");
                 _tasks.Enqueue(task, priority);
-                Monitor.Pulse(_lock);
+                Monitor.PulseAll(_lock);
             }
         }
 
@@ -102,6 +103,11 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             {
                 executor.Wait();
             }
+        }
+
+        public override string ToString()
+        {
+            return String.Format("TaskPool[ Tasks: {0}, Executors: {1} ]", _tasks.Count, _executors.Count);
         }
     }
 }

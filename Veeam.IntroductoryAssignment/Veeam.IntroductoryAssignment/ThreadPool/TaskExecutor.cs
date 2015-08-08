@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 using Veeam.IntroductoryAssignment.Common;
 
@@ -13,15 +14,15 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             Aborted
         }
 
-        private readonly ITaskProducer _tasks;
+        private readonly ITaskPool _taskPool;
         private readonly object _lock;
 
         private State _state;
         private Thread _handler;
 
-        public TaskExecutor(ITaskProducer tasks, object synchLock)
+        public TaskExecutor(ITaskPool taskPool, object synchLock)
         {
-            _tasks = tasks;
+            _taskPool = taskPool;
             _lock = synchLock;
         }
 
@@ -31,16 +32,17 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             {
                 while (_state == State.Runned)
                 {
+                    ITask task;
                     lock (_lock)
                     {
-                        var task = _tasks.GetTask();
-                        if (task != null) ExecuteTask(task);
-                        else
+                        task = _taskPool.GetTask();
+                        if (task == null) 
                         {
                             Monitor.Wait(_lock);
                             if (_state == State.Aborted) Monitor.PulseAll(_lock);
                         }
                     }
+                    if (task != null) ExecuteTask(task);
                 }
                 Log("Exit");
             });
@@ -53,16 +55,15 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         {
             try
             {
-                Log(String.Format("runned task {0}", task));
+                Log(String.Format("run task {0}", task));
                 task.Execute();
+                Log(String.Format("complete task {0}", task));
             }
             catch (Exception e)
             {
+                Abort();
                 Console.WriteLine("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
                         this, e.Message);
-                throw new TaskExecuteException(
-                    String.Format("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
-                        this, e.Message), e);
             }
         }
 

@@ -11,7 +11,7 @@ namespace Veeam.IntroductoryAssignment.Common
     {
         public virtual void Log(string message)
         {
-            Console.WriteLine("{0}: {1}", this, message);
+            Console.WriteLine("[{0}] {1}: {2}", DateTime.Now.ToString("HH:mm:ss"), this, message);
         }
     }
 }

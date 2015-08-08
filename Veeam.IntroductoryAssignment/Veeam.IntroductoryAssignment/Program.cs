@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 
 namespace Veeam.IntroductoryAssignment
 {
@@ -14,9 +15,9 @@ namespace Veeam.IntroductoryAssignment
         static int Main(string[] args)
         {
 #if DEBUG
-            var testFileName = "small.pdf";
+            var testFileName = "batman.mkv";
             args = new[] {"compress", testFileName, testFileName + ".gz"};
-            args = new[] { "decompress", testFileName + ".gz", "unpacked_" + testFileName };
+            //args = new[] { "decompress", testFileName + ".gz", "unpacked_" + testFileName };
 #endif //DEBUG
             try
             {
@@ -89,10 +90,11 @@ namespace Veeam.IntroductoryAssignment
             }
             
             var originalFileName = args[1];
+
             var convertedFileName = args[2];
-            if (String.Equals(originalFileName, convertedFileName, StringComparison.OrdinalIgnoreCase))
+            if (File.Exists(convertedFileName))
             {
-                throw new IncorrectProgramArgumentsException("Original and converted filenames are the same!");
+                throw new IncorrectProgramArgumentsException("Specified converted filename already exists!");
             }
 
             var mode = ParseMode(args[0]);

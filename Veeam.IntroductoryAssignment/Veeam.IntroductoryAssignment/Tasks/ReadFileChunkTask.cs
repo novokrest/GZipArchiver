@@ -4,18 +4,17 @@ using Veeam.IntroductoryAssignment.FileConverting;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
-    class ReadFileChunkTask : ITask
+    class ReadFileChunkTask : ObservableTask
     {
         private readonly FileChunk _fileChunk;
-        private readonly FileConverter _fileConverter;
 
-        public ReadFileChunkTask(FileChunk fileChunk, FileConverter fileConverter)
+        public ReadFileChunkTask(FileChunk fileChunk, ITaskCompletionObserver fileConverter)
+            : base(fileConverter)
         {
             _fileChunk = fileChunk;
-            _fileConverter = fileConverter;
         }
 
-        public void Execute()
+        public override void Execute()
         {
             var fileName = _fileChunk.FileName;
             var chunkInfo = _fileChunk.Info;
@@ -23,10 +22,11 @@ namespace Veeam.IntroductoryAssignment.Tasks
 
             using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
+                fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
                 fileStream.Read(data, 0, chunkInfo.Length);
             }
 
-            _fileConverter.NotifyAboutTaskCompletion(_fileChunk);
+            Observer.NotifyAboutTaskCompletion(_fileChunk);
         }
     }
 }

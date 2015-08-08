@@ -1,15 +1,16 @@
 ﻿using System.IO;
 using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileAssembling;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
     class FileAssembleTask : ObservableTask
     {
+        private readonly static object _lock = new object();
+
         private readonly FileChunk _fileChunk;
 
-        public FileAssembleTask(FileChunk fileChunk, FileAssembler fileAssembler)
-            : base(fileAssembler)
+        public FileAssembleTask(FileChunk fileChunk, ITaskCompletionObserver observer)
+            : base(observer)
         {
             _fileChunk = fileChunk;
         }
@@ -20,10 +21,13 @@ namespace Veeam.IntroductoryAssignment.Tasks
             var chunkInfo = _fileChunk.Info;
             var data = _fileChunk.GetData();
 
-            using (var fileStream = new FileStream(fileName, FileMode.OpenOrCreate, FileAccess.Write))
+            lock (_lock)
             {
-                fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
-                fileStream.Write(data, 0, chunkInfo.Length);
+                using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.ReadWrite))
+                {
+                    fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
+                    fileStream.Write(data, 0, chunkInfo.Length);
+                }   
             }
 
             _fileChunk.ReleaseData();

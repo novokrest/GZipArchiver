@@ -6,10 +6,20 @@ namespace Veeam.IntroductoryAssignment.Util
     class PriorityQueue<T>
     {
         private readonly SortedDictionary<int, Queue<T>> _queues = new SortedDictionary<int, Queue<T>>();
+        private long _count;
+
+        public long Count
+        {
+            get
+            {
+                return _count;
+            }
+        }
 
         public void Enqueue(T item, int priority)
         {
             GetQueue(priority).Enqueue(item);
+            _count++;
         }
 
         private Queue<T> GetQueue(int priority)
@@ -24,6 +34,7 @@ namespace Veeam.IntroductoryAssignment.Util
         //TODO: remove Queue if it is Empty
         public T Dequeue()
         {
+            _count--;
             var highPriorityQueue = _queues.Values.LastOrDefault(queue => queue.Count > 0);
             return highPriorityQueue != null ? highPriorityQueue.Dequeue() : default(T);
         }

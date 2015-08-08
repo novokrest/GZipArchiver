@@ -48,6 +48,11 @@ namespace Veeam.IntroductoryAssignment.Common
                 return new DataInfo((int)memoryStream.Position, memoryStream.GetBuffer());
             }
         }
+
+        public override string ToString()
+        {
+            return "CompressMemoryDataConverter";
+        }
     }
 
     internal class GZipDecompressMemoryDataConverter : IMemoryDataConverter
@@ -70,8 +75,14 @@ namespace Veeam.IntroductoryAssignment.Common
             using (var memoryStream = new MemoryStream(dataInfo.Data, dataInfo.Length - 4, 4))
             {
                 var binaryReader = new BinaryReader(memoryStream);
-                return binaryReader.ReadInt32();
+                var length = binaryReader.ReadInt32();
+                return length;
             }
+        }
+
+        public override string ToString()
+        {
+            return "GZipDecompressMemoryDataConverter";
         }
     }
 }
