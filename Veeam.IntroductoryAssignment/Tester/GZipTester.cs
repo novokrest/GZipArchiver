@@ -38,9 +38,10 @@ namespace Tester
             {
                 throw new ProgramTesterException("Process is null");
             }
-            //process.BeginOutputReadLine();
+
             process.WaitForExit();
-            Console.Write("Process output: {0}", process.StandardOutput.ReadToEnd());
+            Console.Write("Process output: {0}{1}", Environment.NewLine, process.StandardOutput.ReadToEnd());
+            
             if (process.ExitCode != ExpectedExitCode)
             {
                 throw new ProgramTesterException(String.Format("Unexpected exit code: expected={0}, actual={1}", ExpectedExitCode, process.ExitCode));
