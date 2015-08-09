@@ -20,22 +20,4 @@ namespace Veeam.IntroductoryAssignment.FileDataManaging
             }
         }
     }
-
-    class ConcurrentFileDataReader : FileDataReader
-    {
-        private readonly object _lock = new object();
-
-        public ConcurrentFileDataReader(string fileName) 
-            : base(fileName)
-        {
-        }
-
-        public override void ReadData(FileChunkInfo chunkInfo, byte[] data)
-        {
-            lock (_lock)
-            {
-                base.ReadData(chunkInfo, data);
-            }
-        }
-    }
 }

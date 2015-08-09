@@ -20,22 +20,4 @@ namespace Veeam.IntroductoryAssignment.FileDataManaging
             }
         }
     }
-
-    class ConcurrentFileDataWriter : FileDataWriter
-    {
-        private readonly object _lock = new object();
-
-        public ConcurrentFileDataWriter(string fileName)
-            : base(fileName)
-        {
-        }
-
-        public override void WriteData(FileChunkInfo chunkInfo, byte[] data)
-        {
-            lock (_lock)
-            {
-                base.WriteData(chunkInfo, data);
-            }
-        }
-    }
 }
