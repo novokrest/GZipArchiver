@@ -17,6 +17,7 @@ namespace Veeam.IntroductoryAssignment.FileAssembling
                 var headerWriter = new ArchiveHeaderWriter(fileStream);
                 headerWriter.WriteHeader(ArchiveHeader.Create(SplitInfo));
             }
+            TaskPool.Stop();
         }
     }
 }

@@ -9,6 +9,7 @@
 
         protected override void CompleteAssembling()
         {
+            TaskPool.Stop();
         }
     }
 }

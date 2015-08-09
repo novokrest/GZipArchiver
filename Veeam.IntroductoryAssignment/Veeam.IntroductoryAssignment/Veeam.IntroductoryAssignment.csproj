@@ -43,11 +43,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Archiver.cs" />
+    <Compile Include="FileChunkManaging\FileChunkProducer.cs" />
+    <Compile Include="FileDataManaging\FileNameHolder.cs" />
+    <Compile Include="FileDataManaging\FileDataReader.cs" />
+    <Compile Include="FileDataManaging\FileDataWriter.cs" />
     <Compile Include="Common\ICompletionWaitable.cs" />
     <Compile Include="Common\ITaskCompletionObserver.cs" />
     <Compile Include="Common\ILoggable.cs" />
-    <Compile Include="FileAssembling\ArchiveFileAssembler.cs" />
-    <Compile Include="FileAssembling\RegularFileAssembler.cs" />
+    <Compile Include="FileChunkManaging\FileAssembling\ArchiveFileAssembler.cs" />
+    <Compile Include="FileChunkManaging\FileAssembling\RegularFileAssembler.cs" />
     <Compile Include="FileConverting\FileConverter.cs" />
     <Compile Include="Tasks\ConvertTaskFactory.cs" />
     <Compile Include="Common\ITask.cs" />
@@ -55,15 +59,16 @@
     <Compile Include="Tasks\ObservableTask.cs" />
     <Compile Include="Tasks\ReadFileChunkTask.cs" />
     <Compile Include="ThreadPool\TaskExecutor.cs" />
+    <Compile Include="ThreadPool\TerminateTask.cs" />
     <Compile Include="Util\AVLTree.cs" />
     <Compile Include="Util\ConcurrentQueue.cs" />
     <Compile Include="Common\FileChunk.cs" />
-    <Compile Include="FileSplitting\ArchiveSplitInfoExtractor.cs" />
-    <Compile Include="FileAssembling\FileAssembler.cs" />
-    <Compile Include="Common\FileDataHolder.cs" />
-    <Compile Include="FileSplitting\FileSplitInfoExtractor.cs" />
-    <Compile Include="FileSplitting\FixedSplitInfoExtractor.cs" />
-    <Compile Include="FileSplitting\FileSplitter.cs" />
+    <Compile Include="FileChunkManaging\FileSplitting\ArchiveSplitInfoExtractor.cs" />
+    <Compile Include="FileChunkManaging\FileAssembling\FileAssembler.cs" />
+    <Compile Include="FileDataManaging\FileDataHolder.cs" />
+    <Compile Include="FileChunkManaging\FileSplitting\FileSplitInfoExtractor.cs" />
+    <Compile Include="FileChunkManaging\FileSplitting\FixedSplitInfoExtractor.cs" />
+    <Compile Include="FileChunkManaging\FileSplitting\FileSplitter.cs" />
     <Compile Include="Util\FileStreamHelper.cs" />
     <Compile Include="Common\MemoryDataConverter.cs" />
     <Compile Include="Program.cs" />

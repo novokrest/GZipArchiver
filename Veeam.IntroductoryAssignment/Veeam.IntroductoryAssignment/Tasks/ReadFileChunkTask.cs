@@ -16,16 +16,7 @@ namespace Veeam.IntroductoryAssignment.Tasks
 
         public override void Execute()
         {
-            var fileName = _fileChunk.FileName;
-            var chunkInfo = _fileChunk.Info;
-            var data = _fileChunk.GetData();
-
-            using (var fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read))
-            {
-                fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
-                fileStream.Read(data, 0, chunkInfo.Length);
-            }
-
+            _fileChunk.ReadData();
             Observer.NotifyAboutTaskCompletion(_fileChunk);
         }
     }

@@ -49,12 +49,16 @@ namespace Veeam.IntroductoryAssignment.Common
         private readonly string _fileName;
         private readonly FileChunkInfo _info;
         private readonly FileDataHolder _dataHolder;
+        private readonly FileDataReader _dataReader;
+        private readonly FileDataWriter _dataWriter;
 
-        public FileChunk(string fileName, FileChunkInfo info, FileDataHolder dataHolder)
+        public FileChunk(string fileName, FileChunkInfo info, FileDataHolder dataHolder, FileDataReader dataReader, FileDataWriter dataWriter)
         {
             _fileName = fileName;
             _info = info;
             _dataHolder = dataHolder;
+            _dataReader = dataReader;
+            _dataWriter = dataWriter;
         }
 
         public string FileName
@@ -80,6 +84,16 @@ namespace Veeam.IntroductoryAssignment.Common
         public void SetData(byte[] data)
         {
             DataHolder.SetData(Info, data);
+        }
+
+        public void ReadData()
+        {
+            _dataReader.ReadData(Info, GetData());
+        }
+
+        public void WriteData()
+        {
+            _dataWriter.WriteData(Info, GetData());
         }
 
         public void ReleaseData()

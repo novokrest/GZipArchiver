@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using Veeam.IntroductoryAssignment.ThreadPool;
 
 namespace Veeam.IntroductoryAssignment
 {
@@ -19,6 +20,7 @@ namespace Veeam.IntroductoryAssignment
             args = new[] {"compress", testFileName, testFileName + ".gz"};
             //args = new[] { "decompress", testFileName + ".gz", "unpacked_" + testFileName };
 #endif //DEBUG
+
             try
             {
                 var arguments = ProgramArguments.Parse(args);

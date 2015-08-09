@@ -15,15 +15,12 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         }
 
         private readonly ITaskPool _taskPool;
-        private readonly object _lock;
-
         private State _state;
         private Thread _handler;
 
-        public TaskExecutor(ITaskPool taskPool, object synchLock)
+        public TaskExecutor(ITaskPool taskPool)
         {
             _taskPool = taskPool;
-            _lock = synchLock;
         }
 
         public void Run()
@@ -32,19 +29,21 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             {
                 while (_state == State.Runned)
                 {
-                    ITask task;
-                    lock (_lock)
+                    var task = _taskPool.GetNextTask(this);
+                    if (task == null) continue;
+                    try
                     {
-                        task = _taskPool.GetTask();
-                        if (task == null) 
-                        {
-                            Monitor.Wait(_lock);
-                            if (_state == State.Aborted) Monitor.PulseAll(_lock);
-                        }
+                        task.Execute();
                     }
-                    if (task != null) ExecuteTask(task);
+                    catch (Exception e)
+                    {
+                        _taskPool.Stop();
+                        _taskPool.Exception = e;
+                        Console.WriteLine("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
+                                this, e.Message);
+                    }
                 }
-                Log("Exit");
+                
             });
 
             _state = State.Runned;
@@ -56,14 +55,12 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             try
             {
                 Log(String.Format("run task {0}", task));
-                task.Execute();
+                
                 Log(String.Format("complete task {0}", task));
             }
             catch (Exception e)
             {
-                Abort();
-                Console.WriteLine("Error occurred during task executing. TaskExecutor: {0}, Message: {1}",
-                        this, e.Message);
+
             }
         }
 
@@ -76,19 +73,16 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         public void Stop()
         {
             _state = State.Stopped;
-            Log("Stopped");
         }
 
         public void Wait()
         {
-            Log("Start waiting");
             _handler.Join();
-            Log("End waiting");
         }
 
         public override string ToString()
         {
-            return base.ToString() + String.Format("on thread {0}", _handler.ManagedThreadId);
+            return String.Format("TaskExecutor on thread {0}", _handler.ManagedThreadId);
         }
     }
 

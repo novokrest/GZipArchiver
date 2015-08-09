@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Veeam.IntroductoryAssignment.Common;
 using Veeam.IntroductoryAssignment.FileAssembling;
 using Veeam.IntroductoryAssignment.FileConverting;
@@ -33,14 +34,20 @@ namespace Veeam.IntroductoryAssignment
             var fileConverter = new FileConverter(new GZipCompressMemoryDataConverter(), fileAssembler, taskPool);
             foreach (var fileChunk in fileSplitter.GetFileChunks())
             {
-                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter));
+                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter), 0);
             }
             taskPool.Start();
+            //taskPool.AddTask(new ExceptionTask(), 5);
+            //taskPool.AddTask(new ExceptionTask(), 5);
 
-            fileAssembler.WaitForComplete();
-            Console.WriteLine("Assembling complete");
+            //fileAssembler.WaitForComplete();
+            taskPool.WaitForCompleting();
+            if (taskPool.Exception != null)
+            {
+                throw taskPool.Exception;
+            }
 
-            taskPool.Stop();
+            new object();
         }
 
         public void Decompress(string archivePath, string unpackedFilePath)
@@ -51,14 +58,15 @@ namespace Veeam.IntroductoryAssignment
             var fileConverter = new FileConverter(new GZipDecompressMemoryDataConverter(), fileAssembler, taskPool);
             foreach (var fileChunk in fileSplitter.GetFileChunks())
             {
-                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter));
+                taskPool.AddTask(new ReadFileChunkTask(fileChunk, fileConverter), 0);
             }
             taskPool.Start();
+            taskPool.WaitForCompleting();
 
-            fileAssembler.WaitForComplete();
-            Console.WriteLine("Assembling complete");
+            //fileAssembler.WaitForComplete();
+            //Console.WriteLine("Assembling complete");
 
-            taskPool.Stop();
+            //taskPool.Stop();
         }
     }
 
