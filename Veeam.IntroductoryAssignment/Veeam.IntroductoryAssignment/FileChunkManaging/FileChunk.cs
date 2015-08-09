@@ -1,6 +1,7 @@
 ﻿using System;
+using Veeam.IntroductoryAssignment.FileDataManaging;
 
-namespace Veeam.IntroductoryAssignment.Common
+namespace Veeam.IntroductoryAssignment.FileChunkManaging
 {
     internal class FileChunkInfo
     {

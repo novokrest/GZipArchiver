@@ -1,13 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileChunkManaging;
-using Veeam.IntroductoryAssignment.FileSplitting;
+using Veeam.IntroductoryAssignment.FileChunkManaging.Splitting;
+using Veeam.IntroductoryAssignment.FileDataManaging;
 using Veeam.IntroductoryAssignment.Tasks;
 using Veeam.IntroductoryAssignment.ThreadPool;
 
-namespace Veeam.IntroductoryAssignment.FileAssembling
+namespace Veeam.IntroductoryAssignment.FileChunkManaging
 {
     abstract class FileAssembler : FileChunkProducer, ITaskCompletionObserver
     {
@@ -17,7 +16,7 @@ namespace Veeam.IntroductoryAssignment.FileAssembling
         private int _assembledChunkCount;
 
         protected FileAssembler(string fileName, long chunkCount)
-            : base(fileName, new FileSplitInfo(chunkCount), new ConcurrentFileDataHolder(fileName),new ConcurrentFileDataReader(fileName), new ConcurrentFileDataWriter(fileName))
+            : base(fileName, new FileSplitInfo(chunkCount), new ConcurrentFileDataHolder(fileName), new FileDataReader(fileName), new FileDataWriter(fileName))
         {
             _taskPool = PriorityTaskPool.Instance;
         }
@@ -82,36 +81,46 @@ namespace Veeam.IntroductoryAssignment.FileAssembling
             return false;
         }
 
-        public void NotifyAboutTaskCompletion(FileChunk chunk)
+        public void HandleTaskCompletion(FileChunk chunk)
         {
             ++_assembledChunkCount;
             if (_assembledChunkCount == SplitInfo.ChunkCount)
             {
                 CompleteAssembling();
-                NotifyWaiters();
             }
         }
-
-
-        private readonly Dictionary<Thread, AutoResetEvent> _waiters = new Dictionary<Thread, AutoResetEvent>();
-
-        public void WaitForComplete()
-        {
-            var thread = Thread.CurrentThread;
-            var waitHandler = new AutoResetEvent(false);
-            _waiters.Add(thread, waitHandler);
-            waitHandler.WaitOne();
-        }
-
-        public void NotifyWaiters()
-        {
-            foreach (var waitHandler in _waiters.Values)
-            {
-                waitHandler.Set();
-            }
-        }
-
 
         protected abstract void CompleteAssembling();
+    }
+
+    class ArchiveFileAssembler : FileAssembler
+    {
+        public ArchiveFileAssembler(string fileName, long chunkCount)
+            : base(fileName, chunkCount)
+        {
+        }
+
+        protected override void CompleteAssembling()
+        {
+            using (var fileStream = new FileStream(FileName, FileMode.Append, FileAccess.Write))
+            {
+                var headerWriter = new ArchiveHeaderWriter(fileStream);
+                headerWriter.WriteHeader(ArchiveHeader.Create(SplitInfo));
+            }
+            TaskPool.Stop();
+        }
+    }
+
+    class RegularFileAssembler : FileAssembler
+    {
+        public RegularFileAssembler(string fileName, long chunkCount)
+            : base(fileName, chunkCount)
+        {
+        }
+
+        protected override void CompleteAssembling()
+        {
+            TaskPool.Stop();
+        }
     }
 }

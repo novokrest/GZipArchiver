@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Veeam.IntroductoryAssignment.FileDataManaging;
+﻿using System.IO;
+using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
 
-namespace Veeam.IntroductoryAssignment.Common
+namespace Veeam.IntroductoryAssignment.FileDataManaging
 {
     class FileDataReader : FileNameHolder
     {
@@ -16,7 +13,7 @@ namespace Veeam.IntroductoryAssignment.Common
 
         public virtual void ReadData(FileChunkInfo chunkInfo, byte[] data)
         {
-            using (var fileStream = new FileStream(FileName, FileMode.Open, FileAccess.Read))
+            using (var fileStream = new FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 fileStream.Seek(chunkInfo.Position, SeekOrigin.Begin);
                 fileStream.Read(data, 0, chunkInfo.Length);

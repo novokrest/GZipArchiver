@@ -1,6 +1,5 @@
-﻿using System.IO;
-using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileConverting;
+﻿using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
@@ -17,7 +16,7 @@ namespace Veeam.IntroductoryAssignment.Tasks
         public override void Execute()
         {
             _fileChunk.ReadData();
-            Observer.NotifyAboutTaskCompletion(_fileChunk);
+            Observer.HandleTaskCompletion(_fileChunk);
         }
     }
 }

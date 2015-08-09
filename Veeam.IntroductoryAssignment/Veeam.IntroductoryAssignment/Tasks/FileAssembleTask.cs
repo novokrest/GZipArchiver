@@ -1,5 +1,5 @@
-﻿using System.IO;
-using Veeam.IntroductoryAssignment.Common;
+﻿using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
@@ -17,7 +17,7 @@ namespace Veeam.IntroductoryAssignment.Tasks
         {
             _fileChunk.WriteData();
             _fileChunk.ReleaseData();
-            Observer.NotifyAboutTaskCompletion(_fileChunk);
+            Observer.HandleTaskCompletion(_fileChunk);
         }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using Veeam.IntroductoryAssignment.ThreadPool;
 
 namespace Veeam.IntroductoryAssignment
 {
@@ -15,16 +14,10 @@ namespace Veeam.IntroductoryAssignment
     {
         static int Main(string[] args)
         {
-#if DEBUG
-            var testFileName = "batman.mkv";
-            args = new[] {"compress", testFileName, testFileName + ".gz"};
-            //args = new[] { "decompress", testFileName + ".gz", "unpacked_" + testFileName };
-#endif //DEBUG
-
             try
             {
                 var arguments = ProgramArguments.Parse(args);
-                var archiver = GZipArchiver.Instance;
+                var archiver = new GZipArchiver();
                 if (arguments.Mode == ProgramMode.Compress)
                 {
                     archiver.Compress(arguments.OriginalFileName, arguments.ConvertedFileName);
@@ -49,8 +42,6 @@ namespace Veeam.IntroductoryAssignment
                 Console.WriteLine("Error occurred: {0}", e.Message);
                 return 1;
             }
-
-
 
             return 0;
         }
@@ -92,6 +83,10 @@ namespace Veeam.IntroductoryAssignment
             }
             
             var originalFileName = args[1];
+            if (!File.Exists(originalFileName))
+            {
+                throw new IncorrectProgramArgumentsException("Specified original file does not exist!");
+            }
 
             var convertedFileName = args[2];
             if (File.Exists(convertedFileName))

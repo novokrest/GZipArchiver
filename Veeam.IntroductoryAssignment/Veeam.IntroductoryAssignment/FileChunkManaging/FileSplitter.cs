@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileChunkManaging;
+using Veeam.IntroductoryAssignment.FileChunkManaging.Splitting;
+using Veeam.IntroductoryAssignment.FileDataManaging;
 
-namespace Veeam.IntroductoryAssignment.FileSplitting
+namespace Veeam.IntroductoryAssignment.FileChunkManaging
 {
     interface IFileSplitter
     {
@@ -12,7 +12,7 @@ namespace Veeam.IntroductoryAssignment.FileSplitting
     internal abstract class FileSplitter : FileChunkProducer
     {
         protected FileSplitter(string fileName, IFileSplitInfoExtractor splitInfoExtractor)
-            : base(fileName, splitInfoExtractor.GetFileSplitInfo(), new ConcurrentFileDataHolder(fileName), new ConcurrentFileDataReader(fileName),new ConcurrentFileDataWriter(fileName))
+            : base(fileName, splitInfoExtractor.GetFileSplitInfo(), new ConcurrentFileDataHolder(fileName), new FileDataReader(fileName),new FileDataWriter(fileName))
         {
         }
     }

@@ -1,7 +1,9 @@
-﻿namespace Veeam.IntroductoryAssignment.Common
+﻿using Veeam.IntroductoryAssignment.FileChunkManaging;
+
+namespace Veeam.IntroductoryAssignment.Common
 {
     interface ITaskCompletionObserver
     {
-        void NotifyAboutTaskCompletion(FileChunk chunk);
+        void HandleTaskCompletion(FileChunk chunk);
     }
 }

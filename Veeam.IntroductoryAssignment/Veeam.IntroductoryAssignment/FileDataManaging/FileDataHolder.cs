@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using Veeam.IntroductoryAssignment.FileDataManaging;
+using Veeam.IntroductoryAssignment.Common;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
 
-namespace Veeam.IntroductoryAssignment.Common
+namespace Veeam.IntroductoryAssignment.FileDataManaging
 {
     class FileDataHolder : FileNameHolder
     {

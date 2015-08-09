@@ -31,12 +31,13 @@ namespace Veeam.IntroductoryAssignment.Util
             return _queues[priority];
         }
 
-        //TODO: remove Queue if it is Empty
         public T Dequeue()
         {
-            _count--;
             var highPriorityQueue = _queues.Values.LastOrDefault(queue => queue.Count > 0);
-            return highPriorityQueue != null ? highPriorityQueue.Dequeue() : default(T);
+            if (highPriorityQueue == null) return default(T);
+            var item = highPriorityQueue.Dequeue();
+            _count--;
+            return item;
         }
     }
 }

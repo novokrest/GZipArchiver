@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.IO.Compression;
 
-namespace Veeam.IntroductoryAssignment.Common
+namespace Veeam.IntroductoryAssignment.FileConverting
 {
     internal class DataInfo
     {

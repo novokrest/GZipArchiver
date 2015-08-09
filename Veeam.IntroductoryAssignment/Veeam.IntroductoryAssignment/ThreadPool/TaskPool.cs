@@ -12,17 +12,6 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         Stopped
     }
 
-    interface ITaskPool : IScheduleStrategy
-    {
-        void Start();
-        void Stop();
-        void Abort();
-        void WakeUpAll();
-        void WaitForCompleting();
-        Exception Exception { get; set; }
-        TaskPoolState State { get; set; }
-    }
-
     interface ITaskProducer
     {
         ITask GetNextTask(TaskExecutor executor);
@@ -33,90 +22,24 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         void AddTask(ITask task, int priority);
     }
 
-    interface IScheduleStrategy : ITaskConsumer, ITaskProducer
+    interface ITaskPool : ITaskProducer, ITaskConsumer
     {
-    }
-
-    abstract class BaseScheduleStrategy : IScheduleStrategy
-    {
-        private readonly object _lock;
-
-        protected BaseScheduleStrategy(object taskPoolLock)
-        {
-            _lock = taskPoolLock;
-        }
-
-        public object Lock
-        {
-            get { return _lock; }
-        }
-
-        public abstract void AddTask(ITask task, int priority);
-        public abstract ITask GetNextTask(TaskExecutor executor);
-    }
-
-    class NormalScheduleStrategy : BaseScheduleStrategy
-    {
-        private readonly PriorityQueue<ITask> _tasks;
-
-        public NormalScheduleStrategy(object taskPoolLock, PriorityQueue<ITask> tasks)
-            : base(taskPoolLock)
-        {
-            _tasks = tasks;
-        }
-
-        public override void AddTask(ITask task, int priority)
-        {
-            lock (Lock)
-            {
-                _tasks.Enqueue(task, priority);
-                Monitor.PulseAll(Lock);
-            }
-        }
-
-        public override ITask GetNextTask(TaskExecutor executor)
-        {
-            lock (Lock)
-            {
-                var task = _tasks.Dequeue();
-                if (task == null) Monitor.Wait(Lock);
-                return task;
-            }
-        }
-    }
-
-    class TerminatingScheduleStrategy : BaseScheduleStrategy
-    {
-        public TerminatingScheduleStrategy(object taskPoolLock)
-            : base(taskPoolLock)
-        {
-        }
-
-        public override void AddTask(ITask task, int priority)
-        {
-            lock (Lock)
-            {
-                Monitor.PulseAll(Lock);
-            }
-        }
-
-        public override ITask GetNextTask(TaskExecutor executor)
-        {
-            return new TerminateTask(executor, Lock);
-        }
+        void Start();
+        void Stop();
+        void Abort();
+        void WakeUpAll();
+        void WaitForCompleting();
+        Exception Exception { get; set; }
+        TaskPoolState State { get; set; }
     }
 
     class PriorityTaskPool : ConsoleLoggable, ITaskPool
     {
-        private readonly PriorityQueue<ITask> _tasks = new PriorityQueue<ITask>();
-
         private readonly static ITaskPool instance = new PriorityTaskPool();
 
-        private IScheduleStrategy _scheduleStrategy;
-
-        private readonly object _lock = new object();
-
         private readonly IList<TaskExecutor> _executors = new List<TaskExecutor>();
+        private readonly PriorityQueue<ITask> _tasks = new PriorityQueue<ITask>();
+        private readonly object _lock = new object();
 
         public static ITaskPool Instance
         {
@@ -126,12 +49,15 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
         private PriorityTaskPool()
             : this(Environment.ProcessorCount)
         {
-            
         }
 
         private PriorityTaskPool(int executorsCount)
         {
-            _scheduleStrategy = new NormalScheduleStrategy(_lock, _tasks);
+            for (var i = 0; i < executorsCount; i++)
+            {
+                var executor = new TaskExecutor(this);
+                _executors.Add(executor);
+            }
 
             Console.CancelKeyPress += delegate
             {
@@ -140,12 +66,6 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
                     Stop();
                 }
             };
-
-            for (var i = 0; i < executorsCount; i++)
-            {
-                var executor = new TaskExecutor(this);
-                _executors.Add(executor);
-            }
         }
 
         public void Start()
@@ -159,13 +79,9 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
 
         public void Stop()
         {
-            //_scheduleStrategy = new TerminatingScheduleStrategy(_lock);
-
             Abort();
             WakeUpAll();
-            //WaitForCompleting();
             State = TaskPoolState.Stopped;
-            Console.WriteLine("!!!STOOOOOP!!!!");
         }
 
         public void WakeUpAll()
@@ -178,12 +94,21 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
 
         public ITask GetNextTask(TaskExecutor executor)
         {
-            return _scheduleStrategy.GetNextTask(executor);
+            lock (_lock)
+            {
+                var task = _tasks.Dequeue();
+                if (task == null) Monitor.Wait(_lock);
+                return task;
+            }
         }
 
         public void AddTask(ITask task, int priority)
         {
-            _scheduleStrategy.AddTask(task, priority);
+            lock (_lock)
+            {
+                _tasks.Enqueue(task, priority);
+                Monitor.PulseAll(_lock);
+            }
         }
 
         public void Abort()
@@ -199,7 +124,6 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             foreach (var executor in _executors)
             {
                 executor.Wait();
-                Log(String.Format("executor {0} EXIT", executor));
             }
         }
 

@@ -1,5 +1,5 @@
 ﻿using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileAssembling;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
 using Veeam.IntroductoryAssignment.Tasks;
 using Veeam.IntroductoryAssignment.ThreadPool;
 
@@ -18,7 +18,7 @@ namespace Veeam.IntroductoryAssignment.FileConverting
             _taskPool = taskPool;
         }
 
-        public void NotifyAboutTaskCompletion(FileChunk chunk)
+        public void HandleTaskCompletion(FileChunk chunk)
         {
             _taskPool.AddTask(new ConvertFileChunkTask(_converter, chunk, _fileAssembler), 1);
         }

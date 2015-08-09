@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Threading;
 using Veeam.IntroductoryAssignment.Common;
 
@@ -50,24 +49,9 @@ namespace Veeam.IntroductoryAssignment.ThreadPool
             _handler.Start();
         }
 
-        private void ExecuteTask(ITask task)
-        {
-            try
-            {
-                Log(String.Format("run task {0}", task));
-                
-                Log(String.Format("complete task {0}", task));
-            }
-            catch (Exception e)
-            {
-
-            }
-        }
-
         public void Abort()
         {
             _state = State.Aborted;
-            Log("Aborted");
         }
 
         public void Stop()

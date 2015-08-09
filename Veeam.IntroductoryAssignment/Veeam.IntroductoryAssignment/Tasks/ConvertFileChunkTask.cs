@@ -1,6 +1,7 @@
 ﻿using System;
 using Veeam.IntroductoryAssignment.Common;
-using Veeam.IntroductoryAssignment.FileAssembling;
+using Veeam.IntroductoryAssignment.FileChunkManaging;
+using Veeam.IntroductoryAssignment.FileConverting;
 
 namespace Veeam.IntroductoryAssignment.Tasks
 {
